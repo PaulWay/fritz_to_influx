@@ -15,27 +15,32 @@ import time
 
 # Connection to FritzBox
 fritz_address = environ.get('FRITZBOX_ADDRESS', FRITZ_IP_ADDRESS)
+fritz_username = environ.get('FRITZBOX_USERNAME', 'admin')
 fritz_password = environ.get('FRITZBOX_PASSWORD', 'admin')
-fc = FritzConnection(address=fritz_address, password=fritz_password)
+fc = FritzConnection(
+    address=fritz_address, username=fritz_username, password=fritz_password,
+    use_tls=True
+)
 
 # Connection to InfluxDB
 influx_address = environ.get('INFLUXDB_ADDRESS', 'localhost')
 influx_username = environ.get('INFLUXDB_USERNAME', 'influxdb')
 influx_password = environ.get('INFLUXDB_PASSWORD', 'influxdb')
+influx_database = environ.get('INFLUXDB_DATABASE', 'fritz.box')
 db = InfluxDBClient(
     host=influx_address, username=influx_username,
     password=influx_password
 )
-db.switch_database('fritz.box')
+db.switch_database(influx_database)
 
 # Get data from FritzBox
 data_to_fetch = [
     {'section': 'WANCommonIFC', 'action': 'GetTotalBytesSent', 'properties': ['NewTotalBytesSent']},
     {'section': 'WANCommonIFC', 'action': 'GetTotalBytesReceived', 'properties': ['NewTotalBytesReceived']},
     {'section': 'WANIPConn', 'action': 'GetStatusInfo', 'properties': ['NewUptime']},
-    {'section': 'WLANConfiguration1', 'action': 'GetStatistics', 'properties': ['NewTotalBytesSent', 'NewTotalPacketsReceived']},
-    {'section': 'WLANConfiguration2', 'action': 'GetStatistics', 'properties': ['NewTotalBytesSent', 'NewTotalPacketsReceived']},
-    {'section': 'WLANConfiguration3', 'action': 'GetStatistics', 'properties': ['NewTotalBytesSent', 'NewTotalPacketsReceived']},
+    {'section': 'WLANConfiguration1', 'action': 'GetStatistics', 'properties': ['NewTotalPacketsSent', 'NewTotalPacketsReceived']},
+    {'section': 'WLANConfiguration2', 'action': 'GetStatistics', 'properties': ['NewTotalPacketsSent', 'NewTotalPacketsReceived']},
+    {'section': 'WLANConfiguration3', 'action': 'GetStatistics', 'properties': ['NewTotalPacketsSent', 'NewTotalPacketsReceived']},
 ]
 
 def update_values(fc, db):
