@@ -23,7 +23,7 @@ if not fritz_password:
     fritz_password = 'admin'
 fc = FritzConnection(
     address=fritz_address, password=fritz_password,
-    # user=fritz_username, # username seems to confuse it?
+    user=fritz_username,
     use_tls=True
 )
 
@@ -50,6 +50,20 @@ data_to_fetch = [
         'NewUpstreamCurrRate', 'NewDownstreamCurrRate', 'NewUpstreamMaxRate', 'NewDownstreamMaxRate'
     ]},
 ]
+
+def prestart_checks(fc):
+    for service in data_to_fetch:
+        if service['section'] not in fc.services:
+            print("Fritz!BOX does not recognise", service['section'], "as a service.")
+            continue
+        if service['action'] not in fc.services[service['section']].actions:
+            print("Fritz!BOX does not recognise", service['action'], "as an action for service", service['section'])
+            continue
+        fc_serv_action = fc.services[service['section']].actions[service['action']]
+        for prop in service['properties']:
+            if prop not in fc_serv_action.arguments:
+                print("Property", prop, "not in results for service", service['section'], "action", service['action'])
+                continue
 
 def update_values(fc, db):
     """
@@ -95,5 +109,6 @@ def fetch_on_schedule(fc, db, every=20):
         start_time = time.time()
 
 if __name__ == '__main__':
+    prestart_checks(fc)
     fetch_on_schedule(fc, db, int(environ.get('FETCH_EVERY', '20')))
 
